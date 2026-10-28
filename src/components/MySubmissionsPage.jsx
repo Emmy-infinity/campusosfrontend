@@ -257,7 +257,7 @@ export default function MySubmissionsPage() {
                         <Chip
                           size="small"
                           icon={<BoltRoundedIcon />}
-                          label={`Needs ${liveShortfall.toLocaleString()} more tokens`}
+                          label={`Needs ${(liveShortfall ?? 0).toLocaleString()} more tokens`}
                           color="warning"
                           sx={{ height: 22, fontSize: 11 }}
                         />
@@ -319,24 +319,24 @@ export default function MySubmissionsPage() {
                         </Typography>
                       )}
                       <Typography variant="caption">
-                        {new Date(s.submitted_at).toLocaleDateString()}
+                        {s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : "—"}
                       </Typography>
                     </Stack>
 
                     {isPending && needsTokens && !readyToRetry && (
                       <Alert severity="warning" sx={{ mt: 1.5, py: 0.5 }}>
                         This document needs approximately{" "}
-                        <strong>{required?.toLocaleString() ?? "?"} tokens</strong>{" "}
+                        <strong>{required != null ? required.toLocaleString() : "?"} tokens</strong>{" "}
                         to evaluate. You have{" "}
-                        <strong>{available.toLocaleString()}</strong>. Top up by{" "}
-                        <strong>{liveShortfall.toLocaleString()}</strong> to
+                        <strong>{(available ?? 0).toLocaleString()}</strong>. Top up by{" "}
+                        <strong>{(liveShortfall ?? 0).toLocaleString()}</strong> to
                         continue.
                       </Alert>
                     )}
 
                     {isPending && needsTokens && readyToRetry && (
                       <Alert severity="success" sx={{ mt: 1.5, py: 0.5 }}>
-                        You now have enough tokens ({available.toLocaleString()}{" "}
+                        You now have enough tokens ({(available ?? 0).toLocaleString()}{" "}
                         available). Click <strong>Recheck</strong> to run the
                         evaluation.
                       </Alert>
