@@ -18,7 +18,7 @@ export default function TokenBalance({ refreshKey = 0 }) {
   return (
     <Chip
       icon={<BoltIcon />}
-      label={`${tokens.toLocaleString()} tokens`}
+      label={`${(tokens ?? 0).toLocaleString()} tokens`}
       color="secondary"
       variant="outlined"
       size="small"
