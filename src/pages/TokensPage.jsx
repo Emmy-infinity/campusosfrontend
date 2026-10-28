@@ -34,12 +34,25 @@ export default function TokensPage({ onTokensChanged }) {
   // 1. Load balance + packages on mount
   useEffect(() => {
     let alive = true;
+    
     getBalance()
-      .then((d) => alive && setBalance(d.remaining_tokens))
+      .then((d) => {
+        if (alive) {
+          // Safe check: if backend returns undefined, default to 0
+          setBalance(d?.remaining_tokens ?? 0);
+        }
+      })
       .catch(() => {});
+
     listPackages()
-      .then((d) => alive && setPackages(Array.isArray(d) ? d : []))
+      .then((d) => {
+        if (alive) {
+           // Safe check: Ensure we always set an array
+          setPackages(Array.isArray(d) ? d : []);
+        }
+      })
       .catch(() => alive && setPackages([]));
+
     return () => {
       alive = false;
     };
@@ -65,12 +78,14 @@ export default function TokensPage({ onTokensChanged }) {
           localStorage.removeItem("pending_tx");
           onTokensChanged?.();
           const bal = await getBalance();
-          setBalance(bal.remaining_tokens);
+          setBalance(bal?.remaining_tokens ?? 0);
+          setReturnedTxId(null); // Stop showing the "Confirming" alert
           return;
         }
         if (data.status === "FAILED") {
           localStorage.removeItem("pending_tx");
           setError("Payment failed. Please try again.");
+          setReturnedTxId(null);
           return;
         }
         if (polls < 30) setTimeout(check, 2000);
@@ -91,7 +106,6 @@ export default function TokensPage({ onTokensChanged }) {
     try {
       const data = await purchaseTokens({ package_id: pkg.id });
       if (data.payment_url) {
-        // Remember the transaction so we can poll when we come back
         localStorage.setItem("pending_tx", String(data.transaction_id));
         window.location.href = data.payment_url;
       } else {
@@ -135,7 +149,10 @@ export default function TokensPage({ onTokensChanged }) {
           <Typography variant="subtitle2">Current balance</Typography>
           <Chip
             label={
-              balance != null ? `${balance.toLocaleString()} tokens` : "—"
+              /* FIX 1: Ensure balance is a number before calling toLocaleString */
+              typeof balance === "number" 
+                ? `${balance.toLocaleString()} tokens` 
+                : "—"
             }
             color="primary"
             sx={{ fontWeight: 600 }}
@@ -188,17 +205,19 @@ export default function TokensPage({ onTokensChanged }) {
                 >
                   <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      {pkg.name}
+                      {pkg.name || "Token Pack"}
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 700, my: 1 }}>
-                      {pkg.tokens.toLocaleString()}
+                      {/* FIX 2: Fallback to 0 if tokens are undefined */}
+                      {(pkg.tokens ?? 0).toLocaleString()}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       tokens
                     </Typography>
                     <Divider sx={{ my: 2 }} />
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
-                      UGX {(pkg.price_cents / 100).toLocaleString()}
+                      {/* FIX 3: Removed the / 100 because UGX is whole shillings */}
+                      UGX {(pkg.price_cents ?? 0).toLocaleString()}
                     </Typography>
                   </Box>
                   <Button
