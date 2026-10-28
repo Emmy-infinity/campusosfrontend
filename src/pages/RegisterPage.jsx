@@ -24,7 +24,7 @@ const initialForm = {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth(); // Uses the new register function from AuthContext
+  const { register } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,17 +47,40 @@ export default function RegisterPage() {
       setError("Password must be at least 8 characters long.");
       return;
     }
+    if (form.role === "STUDENT" && !form.student_id.trim()) {
+      setError("Student ID is required.");
+      return;
+    }
+    if (form.role === "LECTURER" && !form.staff_id.trim()) {
+      setError("Staff ID is required.");
+      return;
+    }
 
     setLoading(true);
 
-    // Trim strings
+    // ─── Bulletproof Payload Construction ──────────────────────────────
     const payload = {};
     Object.entries(form).forEach(([k, v]) => {
-      payload[k] = typeof v === "string" ? v.trim() : v;
+      // 🚨 NEVER trim passwords
+      if (k === "password" || k === "password_confirm") {
+        payload[k] = v;
+      } 
+      // Trim all other strings
+      else if (typeof v === "string") {
+        payload[k] = v.trim();
+      } 
+      // Handle the enrollment year explicitly
+      else {
+        payload[k] = v;
+      }
     });
 
-    // Drop irrelevant fields for the chosen role
+    // Ensure enrollment_year is an integer or null
     if (payload.role === "STUDENT") {
+      payload.enrollment_year = payload.enrollment_year 
+        ? parseInt(payload.enrollment_year, 10) 
+        : null;
+      
       delete payload.staff_id;
       delete payload.designation;
     } else {
@@ -66,27 +89,33 @@ export default function RegisterPage() {
     }
 
     try {
-      // This calls apiRegister and updates the AuthContext user state
       await register(payload);
-      
-      // Navigate to dashboard. 
-      // The ProtectedRoute will now see `user` is populated and let them in.
       navigate("/", { replace: true });
     } catch (err) {
+      // ─── Bulletproof Error Parsing ───────────────────────────────────
       const body = err.response?.data;
-      
-      // Format error messages cleanly (handles both detail and field-level errors)
       let errorMessage = "Registration failed. Please try again.";
+
       if (typeof body === "string") {
-        errorMessage = body;
+        // If backend returns HTML (like a 500 error), don't show the whole HTML
+        if (body.includes("<html")) {
+          errorMessage = "A server error occurred. Please try again later.";
+        } else {
+          errorMessage = body;
+        }
       } else if (body?.detail) {
         errorMessage = body.detail;
       } else if (body && typeof body === "object") {
-        errorMessage = Object.entries(body)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-          .join(" · ");
+        // Safely format field-level validation errors
+        try {
+          errorMessage = Object.entries(body)
+            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+            .join(" · ");
+        } catch {
+          errorMessage = "Validation failed. Please check your inputs.";
+        }
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
