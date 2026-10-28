@@ -1,142 +1,311 @@
-import React from "react";
-import OfflineHandTracker from "./pages/Mediapipe";
+// src/App.jsx
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Note from "./components/Note";
-import PrimarySearchAppBar from "./pages/NavigationBar";
-import Home from "./pages/Home";
-import NotFound from "./pages/NotFound"
-import ProtectedRoute from "./components/ProtectedRoute";
-import PlotlyFromAPI from "./pages/Chart"
-import ImageUploader from "./pages/UploadImage";
-import Navbar from "./pages/Navbar";
-import Rightbar from "./pages/Rightbar";
-import Sidebar from "./pages/Sidebar";
-import GalleryView from "./pages/Feedtwo";
-import ProductDetail from "./pages/ProductDetail"; 
-import Footer from "./components/Footer"; 
-import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
+import { ThemeProvider, CssBaseline, Box, CircularProgress } from "@mui/material";
+import { theme } from "./theme";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import Layout from "./components/Layout";
 
-import { Stack, Box, Button, Container, styled } from '@mui/material'
-import './App.css'
+// Auth
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
-// Clean layout flexbox constructor mapping
-const Stacking = styled(Stack)({
-  flexDirection: 'row',
-  gap: '40px',
-  justifyContent: 'space-between'
-});
+// Dispatchers
+import HomePage from "./pages/HomePage";
 
-// 🌟 RESTORED SESSION CLEANUP ENGINES: Wipes invalid keys to allow clean credentials inputs
-function Logout() {
-  localStorage.clear();
-  return <Navigate to="/login" replace />;
+// Shared
+import DocumentsPage from "./pages/DocumentsPage";
+import DocumentDetailPage from "./pages/DocumentDetailPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
+import CoursesPage from "./pages/CoursesPage";
+import CourseCreatePage from "./pages/CourseCreatePage";
+import CourseDetailPage from "./pages/CourseDetailPage";
+import TokensPage from "./pages/TokensPage";                       // ← NEW
+
+// Lecturer
+import LecturerDashboardPage from "./pages/LecturerDashboardPage";
+import QuestionBankCreatePage from "./pages/QuestionBankCreatePage";
+import QuestionBanksListPage from "./pages/QuestionBanksListPage";
+import QuestionBankDetailPage from "./pages/QuestionBankDetailPage";
+import ExamListPage from "./pages/ExamListPage";
+import ExamCreatePage from "./pages/ExamCreatePage";
+import ExamEditPage from "./pages/ExamEditPage";
+import RubricListPage from "./pages/RubricListPage";
+import RubricCreatePage from "./pages/RubricCreatePage";
+import RubricDetailPage from "./pages/RubricDetailPage";
+import LecturerExamAnalyticsPage from "./pages/LecturerExamAnalyticsPage";
+import LecturerCourseAnalyticsPage from "./pages/LecturerCourseAnalyticsPage";
+
+// Student
+import StudentExamsPage from "./pages/ExamsListPage";
+import ExamTakePage from "./pages/ExamTakePage";
+
+// Research submissions
+import SubmissionCreatePage from "./pages/SubmissionCreatePage";
+import MySubmissionsPage from "./pages/MySubmissionsPage";
+
+// ────────────────────────────────────────────────────────────
+// PrivateRoute — wraps children in Layout when authenticated
+// ────────────────────────────────────────────────────────────
+function PrivateRoute({ children, tokensRefresh, requireRole }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (requireRole && user.role !== requireRole && !user.is_superuser) {
+    return <Navigate to="/" replace />;
+  }
+  return <Layout tokensRefresh={tokensRefresh}>{children}</Layout>;
 }
 
-function RegisterAndLogout() {
-  localStorage.clear();
-  return <Register />;
-}
-function App() {
+// ────────────────────────────────────────────────────────────
+// Exams route — dispatches by role
+// ────────────────────────────────────────────────────────────
+function ExamsRoute({ tokensRefresh }) {
+  const { user } = useAuth();
+  const isLecturer = user?.role === "LECTURER" || user?.is_superuser;
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* =====================================================================
-            🏪 1. PRIMARY PUBLIC MARKETPLACE SHOWCASE FEED (FREE TO VIEW)
-           ===================================================================== */}
-        <Route
-          path="/"
-          element={
-            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
-              <PrimarySearchAppBar />
-              <Navbar />
-              
-              {/* 🗲 FLAT PLATFORM MATRIX LAYOUT GRID CANVAS */}
-              <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
-                <Sidebar />
-                <GalleryView />
-              </Stack>
-
-              <Footer />
-            </Box>
-          }
-        />
-
-        {/* =====================================================================
-            🌟 2. PUBLIC DETAILED HARDWARE CAROUSEL SHEETS (FREE TO EXPLORE)
-           ===================================================================== */}
-        <Route 
-          path="/product/:id" 
-          element={
-            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
-              <PrimarySearchAppBar />
-              <Navbar />
-              <Box sx={{ flexGrow: 1 }}>
-                <ProductDetail />
-              </Box>
-              <Footer />
-            </Box>
-          } 
-        />
-
-        {/* =====================================================================
-            🗲 3. SECURED SELLING AND LISTING CREATION FORM GATEWAY (PROTECTED)
-           ===================================================================== */}
-        <Route 
-          path="/upload" 
-          element={
-            <ProtectedRoute>
-              <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
-                <PrimarySearchAppBar />
-                <Navbar />
-                <Box sx={{ flexGrow: 1, py: 2 }}>
-                  <ImageUploader />
-                </Box>
-                <Footer />
-              </Box>
-            </ProtectedRoute>
-          } 
-        />
-
-        {/* =====================================================================
-            💳 4. SECURED MOBILE MONEY TRANSACTION CHECKOUT GATEWAY (PROTECTED)
-           ===================================================================== */}
-        <Route 
-          path="/payment" 
-          element={
-            <ProtectedRoute>
-              <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fafafa" }}>
-                <PrimarySearchAppBar />
-                <Navbar />
-                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, md: 4 } }}>
-                  <MoMoCheckoutModal />
-                </Box>
-                <Footer />
-              </Box>
-            </ProtectedRoute>
-          } 
-        />
-
-        {/* =====================================================================
-            📝 5. LOGISTICS GRAPHS AND TRACKING EXTENSION ENDPOINTS
-           ===================================================================== */}
-        <Route path="/chart" element={<PlotlyFromAPI />} />
-        <Route path="/rightbar" element={<Rightbar />} />
-        <Route path="/sidebar" element={<Sidebar />} />
-        <Route path="/landmark" element={<OfflineHandTracker />} />
-        <Route path="/search" element={<PrimarySearchAppBar />} />
-        
-        {/* =====================================================================
-            🔐 6. PUBLIC SESSIONS SECURITY ACCESS ENGINES
-           ===================================================================== */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<RegisterAndLogout />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Layout tokensRefresh={tokensRefresh}>
+      {isLecturer ? <ExamListPage /> : <StudentExamsPage />}
+    </Layout>
   );
 }
 
-export default App;
+// ────────────────────────────────────────────────────────────
+// Routes
+// ────────────────────────────────────────────────────────────
+function AppRoutes() {
+  const [tokensRefresh, setTokensRefresh] = useState(0);
+  const bump = () => setTokensRefresh((n) => n + 1);
+
+  return (
+    <Routes>
+      {/* Public */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* Home */}
+      <Route
+        path="/"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <HomePage tokensRefresh={tokensRefresh} onTokensChanged={bump} />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Lecturer dashboard */}
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <LecturerDashboardPage onTokensChanged={bump} />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Courses ─────────────────────────────────────────── */}
+      <Route
+        path="/courses"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <CoursesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/courses/new"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <CourseCreatePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/courses/:id"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <CourseDetailPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/courses/:id/analytics"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <LecturerCourseAnalyticsPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Exams ─────────────────────────────────────────── */}
+      <Route path="/exams" element={<ExamsRoute tokensRefresh={tokensRefresh} />} />
+
+      <Route
+        path="/exams/attempt/:attemptId"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <ExamTakePage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/exams/new"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <ExamCreatePage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Edit existing exam — declared before /:id/analytics for readability */}
+      <Route
+        path="/exams/:id"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <ExamEditPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/exams/:id/analytics"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <LecturerExamAnalyticsPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Question banks ──────────────────────────────────── */}
+      <Route
+        path="/question-banks"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <QuestionBanksListPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/question-banks/new"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <QuestionBankCreatePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/question-banks/:id"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <QuestionBankDetailPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Rubrics ─────────────────────────────────────────── */}
+      <Route
+        path="/rubrics"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <RubricListPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/rubrics/new"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <RubricCreatePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/rubrics/:id"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh} requireRole="LECTURER">
+            <RubricDetailPage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Submissions ─────────────────────────────────────── */}
+      <Route
+        path="/submissions"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <MySubmissionsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/submissions/new"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <SubmissionCreatePage />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Documents ───────────────────────────────────────── */}
+      <Route
+        path="/documents"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <DocumentsPage onTokensChanged={bump} />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/documents/:id"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <DocumentDetailPage onTokensChanged={bump} />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Tokens (Pesapal purchase flow) ─────────────────── */}
+      <Route
+        path="/tokens"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <TokensPage onTokensChanged={bump} />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ── Search ──────────────────────────────────────────── */}
+      <Route
+        path="/search"
+        element={
+          <PrivateRoute tokensRefresh={tokensRefresh}>
+            <SearchResultsPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
