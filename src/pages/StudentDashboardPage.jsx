@@ -60,11 +60,21 @@ export default function StudentDashboardPage({ onTokensChanged }) {
   };
 
   if (loading) return <DashboardSkeleton />;
-  if (error && !data) return <Alert severity="error">{error}</Alert>;
+  
+  // Guard against missing data entirely
+  if (!data) {
+    return <Alert severity="error">{error || "Failed to load dashboard data."}</Alert>;
+  }
 
+  // Default stats to an empty object to prevent crashes if the backend misses it
   const {
-    stats, courses = [], recent_documents = [], recent_submissions = [],
-    exam_performance, available_exams = [], in_progress_attempts = [],
+    stats = {}, 
+    courses = [], 
+    recent_documents = [], 
+    recent_submissions = [],
+    exam_performance = {}, 
+    available_exams = [], 
+    in_progress_attempts = [],
   } = data;
 
   const firstName = user?.first_name || user?.username || "Student";
@@ -100,28 +110,28 @@ export default function StudentDashboardPage({ onTokensChanged }) {
         <StatCard
           icon={SchoolRoundedIcon}
           label="Courses"
-          value={stats.enrolled_courses}
+          value={stats?.enrolled_courses ?? 0}
           color="#1976d2"
           onClick={() => navigate("/courses")}
         />
         <StatCard
           icon={DescriptionOutlinedIcon}
           label="Documents"
-          value={stats.documents}
+          value={stats?.documents ?? 0}
           color="#059669"
           onClick={() => navigate("/documents")}
         />
         <StatCard
           icon={AssignmentTurnedInRoundedIcon}
           label="Reviewed"
-          value={`${stats.reviewed}/${stats.submissions}`}
+          value={`${stats?.reviewed ?? 0}/${stats?.submissions ?? 0}`}
           color="#7c3aed"
           onClick={() => navigate("/submissions")}
         />
         <StatCard
           icon={PendingActionsRoundedIcon}
           label="Pending"
-          value={stats.pending_evaluation}
+          value={stats?.pending_evaluation ?? 0}
           color="#dc2626"
           onClick={() => navigate("/submissions")}
         />
@@ -132,8 +142,8 @@ export default function StudentDashboardPage({ onTokensChanged }) {
         <PerformanceStrip
           avgPct={avgPct}
           bestPct={bestPct}
-          graded={stats.exams_graded}
-          attempted={stats.exams_attempted}
+          graded={stats?.exams_graded ?? 0}
+          attempted={stats?.exams_attempted ?? 0}
         />
       </Box>
 
@@ -170,7 +180,7 @@ export default function StudentDashboardPage({ onTokensChanged }) {
 
         <Stack spacing={3}>
           <QuickActionsPanel />
-          <TokensPanel tokensRemaining={stats.tokens_remaining} />
+          <TokensPanel tokensRemaining={stats?.tokens_remaining ?? 0} />
           <MyCoursesPanel courses={courses} />
         </Stack>
       </Box>
