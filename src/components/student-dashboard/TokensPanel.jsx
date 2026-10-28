@@ -16,7 +16,7 @@ export default function TokensPanel({ tokensRemaining = 0 }) {
         </Typography>
       </Stack>
       <Typography variant="h5" sx={{ fontWeight: 700 }}>
-        {tokensRemaining.toLocaleString()}
+        {(tokensRemaining ?? 0).toLocaleString()}
       </Typography>
       <Typography variant="caption" color="text.secondary">
         remaining
