@@ -1,3 +1,4 @@
+// src/context/AuthContext.jsx
 import {
   createContext,
   useContext,
@@ -8,7 +9,7 @@ import {
 import {
   login as apiLogin,
   logout as apiLogout,
-  register as apiRegister,   // ← ADD
+  register as apiRegister,
   getMe,
 } from "../api/auth";
 
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetches the current user profile if a token exists
   const loadUser = useCallback(async () => {
     if (!localStorage.getItem("access_token")) {
       setUser(null);
@@ -34,25 +36,27 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Boot the auth state on first render
   useEffect(() => {
     loadUser();
   }, [loadUser]);
 
+  // Standard login flow
   const login = async (username, password) => {
     await apiLogin(username, password);
-    await loadUser();
+    await loadUser(); // Hydrates the `user` state so "Welcome back, [Name]" works
   };
 
-  // ─── ADD THIS ─────────────────────────────────────────────────────
+  // Registration flow
   const register = async (payload) => {
     const data = await apiRegister(payload);
     // apiRegister stores tokens in localStorage.
-    // Populate `user` from the response — no extra request needed.
+    // We can populate `user` from the response directly — no extra request needed.
     setUser(data.user);
     return data.user;
   };
-  // ──────────────────────────────────────────────────────────────────
 
+  // Logout flow
   const logout = () => {
     apiLogout();
     setUser(null);
@@ -64,7 +68,7 @@ export function AuthProvider({ children }) {
         user,
         loading,
         login,
-        register,      // ← ADD
+        register,
         logout,
         reload: loadUser,
       }}
