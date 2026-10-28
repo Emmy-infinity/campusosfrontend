@@ -1,3 +1,4 @@
+// src/pages/RegisterPage.jsx
 import { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
@@ -23,7 +24,7 @@ const initialForm = {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register } = useAuth(); // Uses the new register function from AuthContext
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,17 @@ export default function RegisterPage() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    // ─── Frontend Validation ───────────────────────────────────────────
+    if (form.password !== form.password_confirm) {
+      setError("Passwords do not match. Please check and try again.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
     setLoading(true);
 
     // Trim strings
@@ -54,19 +66,28 @@ export default function RegisterPage() {
     }
 
     try {
+      // This calls apiRegister and updates the AuthContext user state
       await register(payload);
+      
+      // Navigate to dashboard. 
+      // The ProtectedRoute will now see `user` is populated and let them in.
       navigate("/", { replace: true });
     } catch (err) {
       const body = err.response?.data;
-      setError(
-        typeof body === "string"
-          ? body
-          : body?.detail ||
-            Object.entries(body || {})
-              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-              .join(" · ") ||
-            "Registration failed. Please try again."
-      );
+      
+      // Format error messages cleanly (handles both detail and field-level errors)
+      let errorMessage = "Registration failed. Please try again.";
+      if (typeof body === "string") {
+        errorMessage = body;
+      } else if (body?.detail) {
+        errorMessage = body.detail;
+      } else if (body && typeof body === "object") {
+        errorMessage = Object.entries(body)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join(" · ");
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -101,6 +122,7 @@ export default function RegisterPage() {
               value={form.role}
               onChange={onChange}
               fullWidth
+              disabled={loading}
             >
               <MenuItem value="STUDENT">Student</MenuItem>
               <MenuItem value="LECTURER">Lecturer</MenuItem>
@@ -116,6 +138,7 @@ export default function RegisterPage() {
               required
               fullWidth
               autoComplete="username"
+              disabled={loading}
             />
 
             <TextField
@@ -127,6 +150,7 @@ export default function RegisterPage() {
               required
               fullWidth
               autoComplete="email"
+              disabled={loading}
             />
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
@@ -136,6 +160,7 @@ export default function RegisterPage() {
                 value={form.first_name}
                 onChange={onChange}
                 fullWidth
+                disabled={loading}
               />
               <TextField
                 label="Last name"
@@ -143,6 +168,7 @@ export default function RegisterPage() {
                 value={form.last_name}
                 onChange={onChange}
                 fullWidth
+                disabled={loading}
               />
             </Box>
 
@@ -156,6 +182,7 @@ export default function RegisterPage() {
                   placeholder="e.g. 2024-CS-001"
                   required
                   fullWidth
+                  disabled={loading}
                 />
                 <TextField
                   label="Department"
@@ -163,6 +190,7 @@ export default function RegisterPage() {
                   value={form.department}
                   onChange={onChange}
                   fullWidth
+                  disabled={loading}
                 />
                 <TextField
                   label="Enrollment year"
@@ -171,6 +199,7 @@ export default function RegisterPage() {
                   value={form.enrollment_year}
                   onChange={onChange}
                   fullWidth
+                  disabled={loading}
                 />
               </>
             ) : (
@@ -183,6 +212,7 @@ export default function RegisterPage() {
                   placeholder="e.g. STF-102"
                   required
                   fullWidth
+                  disabled={loading}
                 />
                 <TextField
                   label="Department"
@@ -190,6 +220,7 @@ export default function RegisterPage() {
                   value={form.department}
                   onChange={onChange}
                   fullWidth
+                  disabled={loading}
                 />
                 <TextField
                   label="Designation"
@@ -198,6 +229,7 @@ export default function RegisterPage() {
                   onChange={onChange}
                   placeholder="e.g. Senior Lecturer"
                   fullWidth
+                  disabled={loading}
                 />
               </>
             )}
@@ -212,6 +244,7 @@ export default function RegisterPage() {
               fullWidth
               helperText="Minimum 8 characters"
               autoComplete="new-password"
+              disabled={loading}
             />
 
             <TextField
@@ -223,6 +256,7 @@ export default function RegisterPage() {
               required
               fullWidth
               autoComplete="new-password"
+              disabled={loading}
             />
 
             {error && <Alert severity="error">{error}</Alert>}
