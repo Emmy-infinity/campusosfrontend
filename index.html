@@ -2,9 +2,52 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Using standard favicon, assuming your python script generated it -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Campusos.ug</title>
+    
+    <!-- ========================================== -->
+    <!-- PRIMARY SEO & METADATA                     -->
+    <!-- ========================================== -->
+    <title>CampusOS | Sovereign Academic Platform</title>
+    <meta name="description" content="One unified, on-premise architecture for course administration, automated research evaluation, secure examinations, and academic analytics." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://campusos-82ru.onrender.com/" />
+
+    <!-- ========================================== -->
+    <!-- OPEN GRAPH / FACEBOOK / LINKEDIN           -->
+    <!-- ========================================== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://campusos-82ru.onrender.com/" />
+    <meta property="og:title" content="CampusOS | Sovereign Academic Platform" />
+    <meta property="og:description" content="Restoring data sovereignty to universities with AI-assisted grading and secure exam delivery." />
+    <meta property="og:image" content="https://campusos-82ru.onrender.com/pwa-512x512.png" />
+
+    <!-- ========================================== -->
+    <!-- TWITTER / X                                -->
+    <!-- ========================================== -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://campusos-82ru.onrender.com/" />
+    <meta property="twitter:title" content="CampusOS | Sovereign Academic Platform" />
+    <meta property="twitter:description" content="Restoring data sovereignty to universities with AI-assisted grading and secure exam delivery." />
+    <meta property="twitter:image" content="https://campusos-82ru.onrender.com/pwa-512x512.png" />
+
+    <!-- ========================================== -->
+    <!-- PWA INSTALL EVENT CATCHER                  -->
+    <!-- ========================================== -->
+    <script>
+      window.deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent Chrome 67 and earlier from automatically showing the prompt
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        window.deferredPrompt = e;
+        // Dispatch a custom event so React knows the prompt is ready
+        window.dispatchEvent(new Event('bip-ready'));
+      });
+    </script>
+    <!-- ========================================== -->
+
   </head>
   <body>
     <div id="root"></div>
