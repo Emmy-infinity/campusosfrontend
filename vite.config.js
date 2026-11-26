@@ -2,6 +2,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import prerenderStatic from "vite-plugin-prerender-static"; // 👈 Added import
 
 // ─── BACKEND URL SWITCHER ────────────────────────────────────────────
 const BACKEND_URL = "https://campusos-1-43tc.onrender.com";
@@ -13,7 +14,6 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
-      // Enable Service Worker in local dev mode
       devOptions: {
         enabled: true,
       },
@@ -46,13 +46,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // 👇 FIX: Increase the cache limit to 10MB to allow PlotlyChart (4.78MB)
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        
-        // Cache all static assets (JS, CSS, HTML, images)
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        
-        // Do not cache API calls to prevent stale auth data
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/campusos-1-43tc\.onrender\.com\/api\/.*/i,
@@ -60,6 +55,32 @@ export default defineConfig({
           },
         ],
       },
+    }),
+    // 👇 Added Prerender Plugin
+    prerenderStatic({
+      routes: [
+        {
+          path: "/",
+          tags: {
+            title: "CampusOS | Sovereign Academic Platform",
+            description: "One unified, on-premise architecture for course administration.",
+          },
+        },
+        {
+          path: "/login",
+          tags: {
+            title: "Sign In | CampusOS",
+            description: "Access your CampusOS portal to manage courses, exams, and academic analytics.",
+          },
+        },
+        {
+          path: "/register",
+          tags: {
+            title: "Create an Account | CampusOS",
+            description: "Join East Africa's sovereign academic platform. Register as a student or lecturer.",
+          },
+        },
+      ],
     }),
   ],
 
@@ -106,6 +127,6 @@ export default defineConfig({
 
   build: {
     sourcemap: false,
-    chunkSizeWarningLimit: 5000, // Increased this to suppress the chunk size warning
+    chunkSizeWarningLimit: 5000,
   },
 });
