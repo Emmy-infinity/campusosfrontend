@@ -5,8 +5,7 @@ import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import ShareRoundedIcon from '@mui/icons-material/ShareRounded';
 
 export default function InstallPWA() {
-  const [supportsPWA, setSupportsPWA] = useState(false);
-  const [promptInstall, setPromptInstall] = useState(null);
+  const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
@@ -15,52 +14,62 @@ export default function InstallPWA() {
   const isDev = import.meta.env.DEV;
 
   useEffect(() => {
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    // 1. Check if already installed
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
     if (isStandalone) {
       setIsInstalled(true);
       return;
     }
 
+    // 2. Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
     setIsIOS(/iphone|ipad|ipod/.test(userAgent));
 
-    const handler = (e) => {
-      e.preventDefault();
-      setSupportsPWA(true);
-      setPromptInstall(e);
-    };
+    // 3. Check if the event already fired BEFORE React mounted (caught by index.html)
+    if (window.deferredPrompt) {
+      setShowPrompt(true);
+    }
 
-    window.addEventListener("beforeinstallprompt", handler);
+    // 4. Listen for the custom event dispatched by index.html if it fires AFTER mounting
+    const handleReady = () => setShowPrompt(true);
     const appInstalledHandler = () => setIsInstalled(true);
+
+    window.addEventListener("bip-ready", handleReady);
     window.addEventListener("appinstalled", appInstalledHandler);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("bip-ready", handleReady);
       window.removeEventListener("appinstalled", appInstalledHandler);
     };
   }, []);
 
   const onClickInstall = async (evt) => {
     evt.preventDefault();
+    
+    // Handle iOS
     if (isIOS) {
       setShowIOSInstructions(true);
       return;
     }
-    if (!promptInstall) {
+
+    // Handle standard Chrome/Android
+    if (!window.deferredPrompt) {
       if (isDev) alert("In production, this opens the native install prompt! (Make sure you build the app first).");
       return;
     }
 
-    promptInstall.prompt();
-    const { outcome } = await promptInstall.userChoice;
+    // Trigger the native prompt
+    window.deferredPrompt.prompt();
+    const { outcome } = await window.deferredPrompt.userChoice;
+    
     if (outcome === "accepted") {
-      setPromptInstall(null);
-      setSupportsPWA(false);
+      window.deferredPrompt = null;
+      setShowPrompt(false);
     }
   };
 
-  // 👇 ALLOW IT TO SHOW IN DEV EVEN IF BROWSER HASN'T FIRED EVENT YET
-  if (isInstalled || (!supportsPWA && !isIOS && !isDev)) {
+  // Allow showing in dev mode even if Chrome hasn't fired the event yet
+  if (isInstalled || (!showPrompt && !isIOS && !isDev)) {
     return null;
   }
 
